@@ -42,6 +42,11 @@ void Renderer::paintGL()
 
     if(m_geom_indices.size()>0)
     {
+        if(textures.size()>0)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            texture->bind();
+        }
 
         m_vao->bind();
         glDrawElements(GL_TRIANGLES, (int)m_geom_indices.size(), GL_UNSIGNED_INT, 0);
@@ -121,10 +126,10 @@ void Renderer::PrepareModel()
                    if (bytesPerSample == sizeof(unsigned char))
                    {
                         texture->setData(QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, (const void *)qiamge.bits());
-                        glActiveTexture(GL_TEXTURE0);
-                        texture->bind();
+
+                        qDebug() << "textures applied";
                    }
-                     qDebug() << "textures applied";
+
                 }
 
             }
