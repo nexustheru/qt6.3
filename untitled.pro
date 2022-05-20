@@ -24,6 +24,7 @@ FORMS += \
 INCLUDEPATH +="C:\Users\Tess\Documents\Visual Studio 2019\Projects\assimp\include"
 INCLUDEPATH +="C:\Users\Tess\Documents\Visual Studio 2019\Projects\glew-2.1.0\include"
 INCLUDEPATH +="C:\Users\Tess\Documents\Visual Studio 2019\Projects\freeglut-3.2.1\freeglut-3.2.1\include"
+INCLUDEPATH +="C:\Users\Tess\Documents\Visual Studio 2019\Projects\stb"
 
 LIBS +="C:\Users\Tess\Documents\Visual Studio 2019\Projects\assimp\release\lib\RelWithDebInfo\assimp-vc143-mt.lib"
 LIBS +="C:\Users\Tess\Documents\Visual Studio 2019\Projects\glew-2.1.0\rel\lib\Release\glew.lib"

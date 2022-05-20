@@ -1,6 +1,8 @@
 #include "renderer.h"
 #include <type_traits>
 #define glCheckError() glCheckError_(__FILE__, __LINE__)
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 int wi=0;
 int he=0;
 
@@ -26,10 +28,15 @@ void Renderer::initializeGL()
 
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
     glEnableClientState(GL_NORMAL_ARRAY);
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glEnable(GL_COLOR);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     ImportAssimp();
+    PrepareImage();
     CreateShader();
     PrepareModel();
 }
@@ -42,12 +49,7 @@ void Renderer::paintGL()
 
     if(m_geom_indices.size()>0)
     {
-        if(textures.size()>0)
-        {
-            glActiveTexture(GL_TEXTURE0);
-            texture->bind();
-        }
-
+ glBindTexture(GL_TEXTURE_2D, 1);
         m_vao->bind();
         glDrawElements(GL_TRIANGLES, (int)m_geom_indices.size(), GL_UNSIGNED_INT, 0);
         m_vao->release();
@@ -87,57 +89,13 @@ void Renderer::PrepareModel()
     vertexbuff->allocate(&m_geom_vertices[0], (int)m_geom_vertices.size() * sizeof(GLfloat));
 
     Shader ->enableAttributeArray( vertexpos );
-    Shader ->setAttributeBuffer(vertexpos,GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
+    Shader ->setAttributeBuffer(vertexpos,GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
 
     Shader ->enableAttributeArray( normalpos );
-    Shader ->setAttributeBuffer(normalpos, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
+    Shader ->setAttributeBuffer(normalpos,GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
 
     Shader ->enableAttributeArray( uvpos);
-    Shader ->setAttributeBuffer(uvpos,GL_FLOAT, 0, 2, 6 * sizeof(GLfloat));//might need fix
-
-    if(textures.size()>0)
-    {
-        for(int t=0;t< textures.size();t++)
-        {
-
-            texture=new QOpenGLTexture(QOpenGLTexture::Target2D);
-            texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
-            texture->setSize(720, 720);
-            texture->setMinificationFilter(QOpenGLTexture::Nearest);
-            texture->setMagnificationFilter(QOpenGLTexture::Nearest);
-            texture->setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture->setFormat(QOpenGLTexture::RGBA32F);
-            texture->allocateStorage();
-
-            QImageReader reader(textures[t].c_str());
-            QImage qiamge = reader.read();
-            if(qiamge.isNull())
-            {
-
-                qDebug() << reader.errorString();
-
-            }
-            else
-            {
-                QImage::Format format = qiamge.format();
-                if (format == QImage::Format_RGB32)
-                {
-                   unsigned int bytesPerSample = qiamge.bytesPerLine() / qiamge.width() / 4;
-                   if (bytesPerSample == sizeof(unsigned char))
-                   {
-                        texture->setData(QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, (const void *)qiamge.bits());
-
-                        qDebug() << "textures applied";
-                   }
-
-                }
-
-            }
-
-
-        }
-    }
-
+    Shader ->setAttributeBuffer(uvpos, GL_FLOAT, 0, 2, 2 * sizeof(GLfloat));
 
 
     indexbuff = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
@@ -165,13 +123,44 @@ void Renderer::setMatrix()
 
 }
 
+void Renderer::PrepareImage()
+{
+    if(textures.empty() == false)
+    {
+        GLuint texture[sizeof(textures)];
+        glGenTextures(textures.size(), texture);
+        for(int t=0;t< textures.size();t++)
+        {
+            int width, height, bpp;
+            stbi_set_flip_vertically_on_load(true);
+            uint8_t* rgb_image = stbi_load(textures[t].c_str(), &width, &height, &bpp, STBI_rgb_alpha);
+            if (rgb_image == nullptr)
+             {
+                 qDebug() << "cant data";
+
+             }
+            else
+            {
+                glBindTexture(GL_TEXTURE_2D, texture[t]);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_image);
+
+                stbi_image_free(rgb_image);
+                qDebug() << "textures applied";
+
+            }
+        }
+    }
+}
+
 
 void Renderer::ImportAssimp()
 {
 
     Assimp::Importer importer;
     QString path=QCoreApplication::applicationDirPath()+"/ball.fbx";
-    scene = importer.ReadFile(path.toStdString(), aiProcess_Triangulate| aiProcess_FlipUVs  | aiProcessPreset_TargetRealtime_MaxQuality);
+    scene = importer.ReadFile(path.toStdString(), aiProcess_Triangulate | aiProcessPreset_TargetRealtime_MaxQuality);
     root = scene->mRootNode;
     if (scene)
     {
@@ -183,9 +172,10 @@ void Renderer::ImportAssimp()
               m_geom_vertices.push_back(scene->mMeshes[i]->mVertices[j].x);
               m_geom_vertices.push_back(scene->mMeshes[i]->mVertices[j].y);
               m_geom_vertices.push_back(scene->mMeshes[i]->mVertices[j].z);
-              m_geom_vertices.push_back(scene->mMeshes[i]->mNormals[j].x);
-              m_geom_vertices.push_back(scene->mMeshes[i]->mNormals[j].y);
-              m_geom_vertices.push_back(scene->mMeshes[i]->mNormals[j].z);
+
+              m_geom_normals.push_back(scene->mMeshes[i]->mNormals[j].x);
+              m_geom_normals.push_back(scene->mMeshes[i]->mNormals[j].y);
+              m_geom_normals.push_back(scene->mMeshes[i]->mNormals[j].z);
 
               if (scene->mMeshes[i]->mTextureCoords[0])
               {
@@ -216,6 +206,8 @@ void Renderer::ImportAssimp()
 
                         for (unsigned int m = 0; m < scene->mNumMaterials; m++)
                         {
+                            auto material = scene->mMaterials[m];
+
                             int texIndex = 0;
                             aiReturn texFound = AI_SUCCESS;
 
@@ -223,10 +215,8 @@ void Renderer::ImportAssimp()
 
                             while (texFound == AI_SUCCESS)
                             {
-                                texFound = scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
-
+                                texFound = material->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
                                 textures.push_back(path.C_Str());
-
                                 texIndex++;
                             }
                         }
@@ -330,4 +320,24 @@ QVector3D Renderer::QMatrix4x4_Transform( QVector3D oPoint ,QMatrix4x4 matrix)
     oPoint.setY( fX * matrix.column(1)[0] + fY * matrix.column(1)[1] + fZ * matrix.column(1)[2] + matrix.column(1)[3]);
     oPoint.setZ( fX * matrix.column(2)[0] + fY * matrix.column(2)[1] + fZ * matrix.column(2)[2] + matrix.column(2)[3]);
     return oPoint;
+}
+
+QImage Renderer::aiTexToQImage(aiTexture tex)
+{
+    uint textureSize = tex.mWidth * tex.mHeight;
+    char *textureContent = new char[textureSize * 4];
+
+    for (uint i = 0; i < textureSize; i++)
+    {
+      uint idx = i * 4;
+      auto texel = tex.pcData[i];
+      textureContent[idx] = texel.r;
+      textureContent[idx + 1] = texel.g;
+      textureContent[idx + 2] = texel.b;
+      textureContent[idx + 3] = texel.a;
+
+    }
+ QImage newimage((const unsigned char*)textureContent,tex.mWidth, tex.mHeight, QImage::Format_RGBA8888);
+
+ return newimage;
 }

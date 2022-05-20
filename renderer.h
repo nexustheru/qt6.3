@@ -35,6 +35,7 @@
 #include <QOpenGLDebugLogger>
 #include <QOpenGLTexture>
 #include <QImage>
+#include <QImageReader>
 
 
 struct Vertex
@@ -61,12 +62,14 @@ public:
 
     void PrepareModel();
     void setMatrix();
+    void PrepareImage();
     GLenum glCheckError_(const char* file, int line);
 
     QMatrix4x4 FromMatrix(aiMatrix4x4 mat);
     QMatrix4x4 QMatrixMul(QMatrix4x4 m1,QMatrix4x4 m2);
     QVector3D FromVector(aiVector3D vec);
     QVector3D QMatrix4x4_Transform( QVector3D oPoint ,QMatrix4x4 matrix);
+    QImage aiTexToQImage(aiTexture tex);
 
     int modelview=0;
     int projection=0;
@@ -97,17 +100,18 @@ private:
     QTimer time;
 
     std::vector<GLfloat> m_geom_vertices;
+    std::vector<GLfloat> m_geom_normals;
     std::vector<GLuint> m_geom_indices;
     std::vector<GLfloat> m_geom_uv;
     std::vector<GLfloat> m_geom_color;
     std::vector<std::string> textures;
+    std::vector<QImage> texturesRaw;
 
     QOpenGLBuffer* vertexbuff;
     QOpenGLBuffer* normalbuff;
     QOpenGLBuffer* texturebuff;
     QOpenGLBuffer* colorbuff;
     QOpenGLBuffer* indexbuff;
-    QOpenGLTexture* texture;
     QOpenGLVertexArrayObject* m_vao;
 
 };
