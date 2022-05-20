@@ -90,34 +90,48 @@ void Renderer::PrepareModel()
     Shader ->enableAttributeArray( uvpos);
     Shader ->setAttributeBuffer(uvpos,GL_FLOAT, 0, 2, 6 * sizeof(GLfloat));//might need fix
 
-//    if(textures.size()>0)
-//    {
-//        for(int t=0;t< textures.size();t++)
-//        {
+    if(textures.size()>0)
+    {
+        for(int t=0;t< textures.size();t++)
+        {
 
-//            texture=new QOpenGLTexture(QOpenGLTexture::Target2D);
-//            texture->setMinificationFilter(QOpenGLTexture::Nearest);
-//            texture->setMagnificationFilter(QOpenGLTexture::Nearest);
-//            texture->setWrapMode(QOpenGLTexture::Repeat);
-//            texture->setSize(512,512);
-//            texture->setFormat(QOpenGLTexture::RGBFormat);
-//            texture->allocateStorage();
+            texture=new QOpenGLTexture(QOpenGLTexture::Target2D);
+            texture = new QOpenGLTexture(QOpenGLTexture::Target2D);
+            texture->setSize(720, 720);
+            texture->setMinificationFilter(QOpenGLTexture::Nearest);
+            texture->setMagnificationFilter(QOpenGLTexture::Nearest);
+            texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+            texture->setFormat(QOpenGLTexture::RGBA32F);
+            texture->allocateStorage();
 
-//            QImage qiamge;
-//            bool result=qiamge.load(QString::fromStdString(textures[t]));
-//            if(result=false)
-//            {
-//                qDebug() << "cant load texture";
-//            }
-//            else
-//            {
-//                texture->setData(0, QOpenGLTexture::RGB, QOpenGLTexture::Float32, qiamge.data_ptr());
-//                //glBindTexture(GL_TEXTURE_2D, texture->textureId());
-//            }
-//            qDebug() << "textures applied";
+            QImageReader reader(textures[t].c_str());
+            QImage qiamge = reader.read();
+            if(qiamge.isNull())
+            {
 
-//        }
-//    }
+                qDebug() << reader.errorString();
+
+            }
+            else
+            {
+                QImage::Format format = qiamge.format();
+                if (format == QImage::Format_RGB32)
+                {
+                   unsigned int bytesPerSample = qiamge.bytesPerLine() / qiamge.width() / 4;
+                   if (bytesPerSample == sizeof(unsigned char))
+                   {
+                        texture->setData(QOpenGLTexture::BGRA, QOpenGLTexture::UInt8, (const void *)qiamge.bits());
+                        glActiveTexture(GL_TEXTURE0);
+                        texture->bind();
+                   }
+                     qDebug() << "textures applied";
+                }
+
+            }
+
+
+        }
+    }
 
 
 
