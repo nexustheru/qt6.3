@@ -20,6 +20,8 @@ public:
 
 public slots:
 void compileShader();
+void compileShader1();
+void saveshaders();
 signals:
 
 private:

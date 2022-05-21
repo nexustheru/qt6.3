@@ -84,7 +84,7 @@ public:
     QMatrix4x4 Vieww;
     QMatrix4x4 Projectionn;
     QMatrix4x4 MVPp;
-
+  QOpenGLShaderProgram* Shader;
 public slots:
     void ImportAssimp(void);
 
@@ -95,7 +95,7 @@ signals:
 private:
     aiNode* root;
     const aiScene* scene;
-    QOpenGLShaderProgram* Shader;
+
     void CreateShader();
     QTimer time;
 

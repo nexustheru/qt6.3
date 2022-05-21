@@ -49,7 +49,7 @@ void Renderer::paintGL()
 
     if(m_geom_indices.size()>0)
     {
- glBindTexture(GL_TEXTURE_2D, 1);
+        glBindTexture(GL_TEXTURE_2D, 1);
         m_vao->bind();
         glDrawElements(GL_TRIANGLES, (int)m_geom_indices.size(), GL_UNSIGNED_INT, 0);
         m_vao->release();
@@ -88,15 +88,26 @@ void Renderer::PrepareModel()
     vertexbuff->setUsagePattern(QOpenGLBuffer::StaticDraw);
     vertexbuff->allocate(&m_geom_vertices[0], (int)m_geom_vertices.size() * sizeof(GLfloat));
 
+    normalbuff= new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    normalbuff->create();
+    normalbuff->bind();
+    normalbuff->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    normalbuff->allocate(&m_geom_normals[0], (int)m_geom_normals.size() * sizeof(GLfloat));
+
+//    texturebuff= new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+//    texturebuff->create();
+//    texturebuff->bind();
+//    texturebuff->setUsagePattern(QOpenGLBuffer::StaticDraw);
+//    texturebuff->allocate(&m_geom_uv[0], (int)m_geom_uv.size() * sizeof(GLfloat));
+
     Shader ->enableAttributeArray( vertexpos );
-    Shader ->setAttributeBuffer(vertexpos,GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
+    Shader ->setAttributeBuffer(vertexpos,GL_FLOAT, 0, 3);
 
     Shader ->enableAttributeArray( normalpos );
-    Shader ->setAttributeBuffer(normalpos,GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
+    Shader ->setAttributeBuffer(normalpos,GL_FLOAT, 0, 3);
 
     Shader ->enableAttributeArray( uvpos);
-    Shader ->setAttributeBuffer(uvpos, GL_FLOAT, 0, 2, 2 * sizeof(GLfloat));
-
+    Shader ->setAttributeBuffer(uvpos, GL_FLOAT, 0, 3,0);
 
     indexbuff = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
     indexbuff->create();
@@ -144,6 +155,7 @@ void Renderer::PrepareImage()
                 glBindTexture(GL_TEXTURE_2D, texture[t]);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgb_image);
 
                 stbi_image_free(rgb_image);
@@ -181,6 +193,7 @@ void Renderer::ImportAssimp()
               {
                  m_geom_uv.push_back( scene->mMeshes[i]->mTextureCoords[0][j].x);
                  m_geom_uv.push_back( scene->mMeshes[i]->mTextureCoords[0][j].y);
+                 m_geom_uv.push_back( scene->mMeshes[i]->mTextureCoords[0][j].z);
               }
               if (scene->mMeshes[i]->HasVertexColors(0))
               {
